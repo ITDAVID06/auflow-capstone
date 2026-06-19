@@ -1,0 +1,232 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --breakpoint-xs: 480px;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+/* ─── Light Theme ─── */
+:root {
+    --radius: 0.5rem;
+
+    /* Surface & Text — warm off-white base, near-black navy text */
+    --background: oklch(0.982 0.005 85);
+    --foreground: oklch(0.16 0.025 258);
+
+    /* Card — pure white elevated above warm background */
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.16 0.025 258);
+
+    /* Popover */
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.16 0.025 258);
+
+    /* Primary — institutional navy-indigo */
+    --primary: oklch(0.36 0.11 258);
+    --primary-foreground: oklch(0.99 0 0);
+
+    /* Secondary — warm gray tint */
+    --secondary: oklch(0.955 0.006 85);
+    --secondary-foreground: oklch(0.28 0.025 258);
+
+    /* Muted — warm passive surfaces */
+    --muted: oklch(0.962 0.005 85);
+    --muted-foreground: oklch(0.46 0.018 258);
+
+    /* Accent — very light navy tint for hover states */
+    --accent: oklch(0.942 0.012 258);
+    --accent-foreground: oklch(0.22 0.03 258);
+
+    /* Destructive */
+    --destructive: oklch(0.56 0.2 27);
+    --destructive-foreground: oklch(0.98 0 0);
+
+    /* Borders & inputs — warm-neutral */
+    --border: oklch(0.908 0.006 85);
+    --input: oklch(0.908 0.006 85);
+    --ring: oklch(0.36 0.11 258);
+
+    /* Charts */
+    --chart-1: oklch(0.36 0.11 258);
+    --chart-2: oklch(0.58 0.14 165);
+    --chart-3: oklch(0.70 0.16 45);
+    --chart-4: oklch(0.55 0.18 310);
+    --chart-5: oklch(0.62 0.2 20);
+
+    /* Sidebar — institutional navy brand background */
+    --sidebar: oklch(0.24 0.045 258);
+    --sidebar-foreground: oklch(0.86 0.012 258);
+    --sidebar-primary: oklch(0.74 0.1 258);
+    --sidebar-primary-foreground: oklch(0.14 0.025 258);
+    --sidebar-accent: oklch(0.30 0.055 258);
+    --sidebar-accent-foreground: oklch(0.95 0.006 258);
+    --sidebar-border: oklch(0.32 0.05 258);
+    --sidebar-ring: oklch(0.62 0.15 258);
+}
+
+/* ─── Dark Theme ─── */
+.dark {
+    /* Surface & Text — soft dark navy (Gemini-style, not deep black) */
+    --background: oklch(0.165 0.018 258);
+    --foreground: oklch(0.955 0.006 258);
+
+    /* Card — slightly lifted above background */
+    --card: oklch(0.195 0.02 258);
+    --card-foreground: oklch(0.955 0.006 258);
+
+    /* Popover */
+    --popover: oklch(0.215 0.02 258);
+    --popover-foreground: oklch(0.955 0.006 258);
+
+    /* Primary — lighter periwinkle-navy in dark mode (readable on dark surfaces) */
+    --primary: oklch(0.62 0.15 258);
+    --primary-foreground: oklch(0.98 0 0);
+
+    /* Secondary */
+    --secondary: oklch(0.245 0.022 258);
+    --secondary-foreground: oklch(0.92 0.006 258);
+
+    /* Muted */
+    --muted: oklch(0.238 0.016 258);
+    --muted-foreground: oklch(0.62 0.016 258);
+
+    /* Accent */
+    --accent: oklch(0.258 0.026 258);
+    --accent-foreground: oklch(0.94 0.006 258);
+
+    /* Destructive */
+    --destructive: oklch(0.52 0.19 25);
+    --destructive-foreground: oklch(0.96 0 0);
+
+    /* Borders & inputs */
+    --border: oklch(0.295 0.018 258);
+    --input: oklch(0.295 0.018 258);
+    --ring: oklch(0.62 0.15 258);
+
+    /* Charts */
+    --chart-1: oklch(0.60 0.18 258);
+    --chart-2: oklch(0.62 0.15 165);
+    --chart-3: oklch(0.70 0.17 45);
+    --chart-4: oklch(0.60 0.2 310);
+    --chart-5: oklch(0.63 0.21 20);
+
+    /* Sidebar — slightly darker than bg for depth */
+    --sidebar: oklch(0.148 0.03 258);
+    --sidebar-foreground: oklch(0.82 0.012 258);
+    --sidebar-primary: oklch(0.68 0.14 258);
+    --sidebar-primary-foreground: oklch(0.14 0.025 258);
+    --sidebar-accent: oklch(0.228 0.038 258);
+    --sidebar-accent-foreground: oklch(0.96 0.006 258);
+    --sidebar-border: oklch(0.255 0.032 258);
+    --sidebar-ring: oklch(0.62 0.15 258);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+        line-height: 1.6;
+        background-image: radial-gradient(circle, oklch(0.16 0.025 258 / 0.055) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    .dark body {
+        background-image: radial-gradient(circle, oklch(0.62 0.1 258 / 0.045) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-semibold tracking-tight;
+        line-height: 1.25;
+    }
+
+    h1 { @apply text-2xl font-bold; }
+    h2 { @apply text-xl font-semibold; }
+    h3 { @apply text-lg font-semibold; }
+}
+
+/* ─── Global Polish Utilities ─── */
+@layer utilities {
+    /* Refined focus ring for interactive elements */
+    .focus-ring {
+        @apply outline-none ring-2 ring-ring/40 ring-offset-2 ring-offset-background;
+    }
+}
