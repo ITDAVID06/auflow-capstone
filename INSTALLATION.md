@@ -4,17 +4,144 @@ This guide provides the step-by-step commands to deploy AUFlow on a local virtua
 
 ---
 
-## Phase 1: Retrieve your VM's IP Address
-1. Open the terminal on your Ubuntu Desktop VM.
-2. Run:
-   ```bash
-   ip a
-   ```
-3. Locate the IP address next to `inet` under your main network card (e.g., `192.168.1.150` or similar). This will be referred to as `YOUR_VM_IP`.
+## Phase 1: Create the VM in Proxmox
+
+Before you can install AUFlow, you need a virtual machine. These steps assume you already have Proxmox VE installed and can access its web interface at `https://<proxmox-host>:8006`.
+
+1. **Download the Ubuntu Desktop ISO** (24.04 LTS recommended) from [ubuntu.com/download/desktop](https://ubuntu.com/download/desktop) and upload it to your Proxmox storage via *Datacenter → Storage → ISO Images*.
+2. **Create the VM** in the Proxmox web interface:
+   - *Node → Create VM*
+   - **General**: Give it a name (e.g., `auflow-server`).
+   - **OS**: Select the uploaded Ubuntu Desktop ISO.
+   - **System**: Leave defaults (SCSI controller, VirtIO SCSI single, OVMF (UEFI) if available).
+   - **Disks**: At least **32 GB** (64 GB recommended).
+   - **CPU**: At least **2 cores** (4 recommended).
+   - **Memory**: At least **4 GB** (8 GB recommended).
+   - **Network**: Leave defaults (VirtIO bridging to your Linux bridge, e.g., `vmbr0`).
+3. **Start the VM** and complete the Ubuntu Desktop installation (language, keyboard, user account, etc.).
+4. **After installation**, the VM will reboot into the Ubuntu Desktop. Log in with the user you created.
 
 ---
 
-## Phase 2: Install System Prerequisites
+## Phase 2: Enable SSH Access
+
+SSH allows you to manage the VM remotely from your workstation instead of always using the Proxmox console.
+
+1. Open a terminal inside the VM (or use the Proxmox console).
+2. Install and enable the OpenSSH server:
+
+   ```bash
+   sudo apt update
+   sudo apt install -y openssh-server
+   sudo systemctl enable --now ssh
+   ```
+
+3. Verify SSH is running:
+
+   ```bash
+   sudo systemctl status ssh
+   ```
+
+4. **Find the VM's current IP address** (you will need this to connect via SSH):
+
+   ```bash
+   ip a
+   ```
+
+   Look for the `inet` entry under your network interface (e.g., `192.168.1.150`).
+
+5. **Test the SSH connection** from your workstation:
+
+   ```bash
+   ssh your-username@192.168.1.150
+   ```
+
+   Replace `your-username` with the user you created during Ubuntu installation and `192.168.1.150` with your VM's actual IP.
+
+> **Note:** The remaining phases can be completed either through the VM's terminal directly or over SSH.
+
+---
+
+## Phase 3: Set a Static IP Address
+
+By default, the VM gets a dynamic IP via DHCP, which can change after a reboot — breaking the `APP_URL` and any bookmarks. Assigning a static IP ensures the VM always responds at the same address.
+
+### Option A: Static IP via Netplan (Ubuntu 24.04 default)
+
+Ubuntu Desktop 24.04 uses **Netplan** with NetworkManager as the renderer.
+
+1. Find your network interface name:
+
+   ```bash
+   ip a
+   ```
+
+   Look for an interface like `enp1s0`, `ens18`, or `eth0`.
+
+2. Find your current network details (gateway, DNS):
+
+   ```bash
+   ip route | grep default
+   resolvectl status
+   ```
+
+3. Create a Netplan configuration file:
+
+   ```bash
+   sudo nano /etc/netplan/01-network-manager-all.yaml
+   ```
+
+4. Replace the contents with the following (adjust interface name, IP, gateway, and DNS to match your network):
+
+   ```yaml
+   network:
+     version: 2
+     renderer: NetworkManager
+     ethernets:
+       enp1s0:                               # Replace with your interface name
+         dhcp4: no
+         addresses:
+           - 192.168.1.150/24                # Replace with your desired static IP
+         routes:
+           - to: default
+             via: 192.168.1.1                # Replace with your network gateway
+         nameservers:
+           addresses:
+             - 192.168.1.1                   # Replace with your DNS server
+             - 8.8.8.8
+   ```
+
+5. Apply the configuration:
+
+   ```bash
+   sudo netplan apply
+   ```
+
+6. Verify the new static IP:
+
+   ```bash
+   ip a
+   ```
+
+7. If you are connected via SSH, your connection will drop because the IP changed. Reconnect using the new static IP:
+
+   ```bash
+   ssh your-username@192.168.1.150
+   ```
+
+### Option B: Static IP via Proxmox (DHCP reservation)
+
+If your Proxmox host or network router supports DHCP reservations, you can pin the VM's MAC address to a fixed IP from there instead. This avoids touching the VM's network config:
+
+1. In the Proxmox web interface, go to your VM → *Hardware*.
+2. Note the MAC address of the network device.
+3. Add a DHCP reservation on your router or DHCP server mapping that MAC address to your desired IP.
+
+This IP will be referred to as `YOUR_VM_IP` in the rest of this guide.
+
+---
+
+## Phase 4: Install System Prerequisites
 Update packages, add repositories for PHP 8.4 and Node.js 20, and install the required dependencies:
 
 ```bash
@@ -37,7 +164,7 @@ sudo apt install -y php8.4-fpm php8.4-mysql php8.4-mbstring php8.4-bcmath \
 
 ---
 
-## Phase 3: Install Composer
+## Phase 5: Install Composer
 Install Composer globally:
 
 ```bash
@@ -47,7 +174,7 @@ sudo mv composer.phar /usr/local/bin/composer
 
 ---
 
-## Phase 4: Create MySQL Database
+## Phase 6: Create MySQL Database
 Log into your local MySQL instance:
 ```bash
 sudo mysql -u root
@@ -65,7 +192,7 @@ EXIT;
 
 ---
 
-## Phase 5: Clone Project & Manage Permissions
+## Phase 7: Clone Project & Manage Permissions
 Using a group ownership structure allows both you (the logged-in user) and the web server (`www-data`) to write to project files without running into permission issues:
 
 ```bash
@@ -85,7 +212,7 @@ cd /opt/auflow
 
 ---
 
-## Phase 6: Setup Environment Configuration (`.env`)
+## Phase 8: Setup Environment Configuration (`.env`)
 1. Copy the example config file:
    ```bash
    cp .env.example .env
@@ -99,7 +226,7 @@ cd /opt/auflow
    ```env
    APP_ENV=production
    APP_DEBUG=false
-   APP_URL=http://YOUR_VM_IP                # The IP address from Phase 1 (e.g., http://192.168.1.150)
+   APP_URL=http://YOUR_VM_IP                # The static IP from Phase 3 (e.g., http://192.168.1.150)
 
    DB_HOST=127.0.0.1
    DB_PORT=3306
@@ -118,7 +245,7 @@ cd /opt/auflow
 
 ---
 
-## Phase 7: Install Dependencies & Run Database Seeders
+## Phase 9: Install Dependencies & Run Database Seeders
 Build and package the production environment:
 
 ```bash
@@ -152,7 +279,7 @@ chmod -R 775 storage bootstrap/cache
 
 ---
 
-## Phase 8: Configure Nginx Server Block
+## Phase 10: Configure Nginx Server Block
 1. Create a server block config file:
    ```bash
    sudo nano /etc/nginx/sites-available/auflow
@@ -194,7 +321,7 @@ chmod -R 775 storage bootstrap/cache
 
 ---
 
-## Phase 9: Configure Supervisor Workers
+## Phase 11: Configure Supervisor Workers
 Set up Supervisor to run the Laravel schedule task and the database queue worker automatically:
 
 1. **Queue Worker config**:
@@ -242,6 +369,6 @@ Set up Supervisor to run the Laravel schedule task and the database queue worker
 
 ---
 
-## Phase 10: Access and Verify
+## Phase 12: Access and Verify
 Open any browser on a computer connected to your local home network (LAN/Wi-Fi) and navigate to:
 `http://YOUR_VM_IP`
